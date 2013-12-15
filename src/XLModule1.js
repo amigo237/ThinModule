@@ -3,6 +3,17 @@
     var cachedFiles = [];
     var noop = function() {};
     
+    function isType(type) {
+      return function(obj) {
+        return {}.toString.call(obj) == "[object " + type + "]";
+      }
+    }
+
+    var isObject = isType("Object");
+    var isString = isType("String");
+    var isArray = Array.isArray || isType("Array");
+    var isFunction = isType("Function");
+    
     var STATUS = {
         //还未从服务器获取文件
         FETCHING: 0,
@@ -56,7 +67,7 @@
             }
             
             var factory = mod.factory;
-            var exports = typeof factory == "function" ? factory(require, mod.exports = {}, mod) : factory;
+            var exports = isFunction(factory) ? factory(require, mod.exports = {}, mod) : factory;
             if (exports === undefined) {
                 exports = mod.exports;
             }
@@ -65,7 +76,11 @@
     };
     
     var ModuleManager = {
-        config: {},
+        config: {
+            base : "",
+            alias: {},
+            paths: {}
+        },
         
         get: function(uri, deps) {
             if (!cachedMods[uri]) {
@@ -89,11 +104,14 @@
         },
         
         use: function(id) {
-            var mod = this.get("anonymousModule", [id]);
+            var deps = isArray(id) ? id : [id];
+            var mod = this.get("anonymousModule", deps);
             mod.status = STATUS.EXECUTED;
-            var uri = this.resolve(id);
-            cachedFiles.push(uri);
-            this.load(uri);
+            for (var i = 0, j = deps.length; i < j; i++) {
+                var uri = this.resolve(id[i]);
+                cachedFiles.push(uri);
+                this.load(uri);
+            }
         },
         
         load: function(uri) {
@@ -132,7 +150,20 @@
         },
         
         resolve: function(id) {
-            return this.config["base"] + id + ".js";
+            var alias = this.config["alias"],
+                paths = this.config["paths"],
+                base  = this.config["base"],
+                name = alias[id] || id,
+                realpath = "";
+            
+            if (paths[id]) {
+                realpath = paths[id] + name + ".js";
+            }
+            else {
+                realpath = base + name + ".js";
+            }
+            
+            return realpath;
         },
         
         getScript: function(url, callback, context) {
@@ -148,5 +179,6 @@
     };
     
     global.XLModule = ModuleManager;
+    ModuleManager.define.amd = {};
     global.define = ModuleManager.define;
 })(this);
