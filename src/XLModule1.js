@@ -1,6 +1,7 @@
 ;(function(global) {
     var cachedMods = {};
     var cachedFiles = [];
+    var callbackList = [];
     var noop = function() {};
     
     function isType(type) {
@@ -13,6 +14,11 @@
     var isString = isType("String");
     var isArray = Array.isArray || isType("Array");
     var isFunction = isType("Function");
+        
+    var _cid = 0;
+    function cid() {
+        return _cid++;
+    }
     
     var STATUS = {
         //还未从服务器获取文件
@@ -76,10 +82,27 @@
     };
     
     var ModuleManager = {
-        config: {
-            base : "",
-            alias: {},
-            paths: {}
+        base: "",
+        
+        alias: {},
+        
+        paths: {},
+        
+        merge: function (a, b){
+            if (a && b) {
+                for (var key in b) {
+                    a[key] = b[key];
+                }
+            }
+            return a;
+        },
+        
+        config: function(conf) {
+            for (var key in conf) {
+                if (this[key] !== undefined) {
+                    key === "base" ? this.base = conf[key] : (this[key] = this.merge(this[key], conf[key]));
+                }
+            }
         },
         
         get: function(uri, deps) {
@@ -103,10 +126,16 @@
             }
         },
         
-        use: function(id) {
+        use: function(id, callback) {
             var deps = isArray(id) ? id : [id];
-            var mod = this.get("anonymousModule", deps);
+            var mod = this.get("anonymousModule" + cid(), deps);
             mod.status = STATUS.EXECUTED;
+            
+            if (isFunction(callback)) {
+                mod.callback = callback;
+                callbackList.push(mod);
+            }
+            
             for (var i = 0, j = deps.length; i < j; i++) {
                 var uri = this.resolve(id[i]);
                 cachedFiles.push(uri);
@@ -136,7 +165,23 @@
                 var mod = this.get(cachedFiles[j]);
                 mod.exec();
             }
+            
+            for (var i = 0, j = callbackList.length; i < j; i++) {
+                var mod = callbackList[i];
+                var exports = [];
+                
+                for (var m = 0, n = mod.dependencies.length; m < n; m++) {
+                    exports.push(this.get(this.resolve(mod.dependencies[m])).exports);
+                }
+
+                if (mod.callback) {
+                    mod.callback.apply(global, exports);
+                    delete mod.callback;
+                }
+            }
+            
             cachedFiles = [];
+            callbackList = [];
         },
         
         checkModulesDone: function() {
@@ -150,9 +195,9 @@
         },
         
         resolve: function(id) {
-            var alias = this.config["alias"],
-                paths = this.config["paths"],
-                base  = this.config["base"],
+            var alias = this["alias"],
+                paths = this["paths"],
+                base  = this["base"],
                 name = alias[id] || id,
                 realpath = "";
             

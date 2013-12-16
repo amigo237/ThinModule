@@ -10,8 +10,20 @@
 <body>
 <script type="text/javascript" src="../src/XLModule1.js"></script>
 <script type="text/javascript">
+    XLModule.config({
+        alias: {
+            "jquery": "jquery-1.10.2.min"
+        },
+        
+        paths: {
+            "jquery": "http://jinbi.xunlei.com/static/js/lib/"
+        }
+    });
     //console.dir(!!define.amd);
-    XLModule.use(["http://code.jquery.com/jquery-1.10.2.min", "http://code.jquery.com/jquery-1.10.2"]);
+    XLModule.use(["jquery"], function($) {
+        console.dir($);
+    });
+    //XLModule.use(["http://code.jquery.com/jquery-1.10.2"]);
 </script>
 </body>
 </html>
