@@ -2,15 +2,15 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>XLModule test</title>
+<title>XMD test</title>
 <style type="text/css">
 	
 </style>
 </head>
 <body>
-<script type="text/javascript" src="../src/XLModule1.js"></script>
+<script type="text/javascript" src="../src/XMD.js"></script>
 <script type="text/javascript">
-    XLModule.config({
+    XMD.config({
         alias: {
             "jquery": "jquery-1.10.2.min"
         },
@@ -20,10 +20,10 @@
         }
     });
     //console.dir(!!define.amd);
-    XLModule.use(["jquery"], function($) {
+    XMD.use(["jquery"], function($) {
         console.dir($);
     });
-    //XLModule.use(["http://code.jquery.com/jquery-1.10.2"]);
+    //XMD.use(["http://code.jquery.com/jquery-1.10.2"]);
 </script>
 </body>
 </html>

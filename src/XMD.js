@@ -223,7 +223,7 @@
         }
     };
     
-    global.XLModule = ModuleManager;
+    global.XMD = ModuleManager;
     ModuleManager.define.amd = {};
     global.define = ModuleManager.define;
 })(this);
